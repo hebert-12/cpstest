@@ -5,19 +5,21 @@
     'js/typing.js',
     'js/suite.js',
     'js/feature-pack.js',
-    'js/extra-tools.js'
+    'js/extra-tools.js',
+    'js/ui-fixes.js'
   ];
   const STYLE_URLS = [
     'css/suite.css',
     'css/typing.css',
     'css/repair.css',
     'css/feature-pack.css',
-    'css/extra-tools.css'
+    'css/extra-tools.css',
+    'css/ui-polish.css'
   ];
 
   function loadStyles() {
     STYLE_URLS.forEach((href) => {
-      if (document.querySelector(`link[ rel="stylesheet"][href="${href}"]`)) return;
+      if (document.querySelector(`link[rel="stylesheet"][href="${href}"]`)) return;
       const link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = href;
@@ -64,7 +66,6 @@
     ];
     let count = 0;
     let recent = [];
-    const pressed = new Set();
 
     function keyLabel(key) {
       if (key === ' ') return 'Space';
@@ -91,11 +92,6 @@
       });
     }
 
-    function clearPressed() {
-      pressed.clear();
-      layout.querySelectorAll('.keycap.pressed').forEach((el) => el.classList.remove('pressed'));
-    }
-
     function render() {
       historyEl.replaceChildren();
       if (!recent.length) {
@@ -116,7 +112,7 @@
     function reset() {
       count = 0;
       recent = [];
-      clearPressed();
+      layout.querySelectorAll('.keycap.pressed').forEach((el) => el.classList.remove('pressed'));
       $('#keyboard-count').textContent = '0';
       $('#keyboard-last').textContent = '—';
       $('#keyboard-code').textContent = '—';
@@ -125,26 +121,26 @@
       render();
     }
 
-    function isEditable(target) {
+    function editable(target) {
       return target instanceof Element && Boolean(target.closest('input, textarea, select, [contenteditable="true"]'));
     }
 
-    function matchingKey(key) {
-      const normalized = key.toLowerCase();
-      return [...layout.querySelectorAll('.keycap')].find((el) => el.dataset.key === normalized || el.textContent.toLowerCase() === normalized);
+    function matchingKey(event) {
+      const normalized = event.key.toLowerCase();
+      return [...layout.querySelectorAll('.keycap')].find((el) =>
+        el.dataset.key === normalized || el.textContent.toLowerCase() === normalized
+      );
     }
 
     function onKeyDown(event) {
-      if (!view.classList.contains('active') || isEditable(event.target)) return;
-      const key = event.key === ' ' ? ' ' : event.key;
-      const keyEl = matchingKey(key);
+      if (!view.classList.contains('active') || editable(event.target)) return;
+      const keyEl = matchingKey(event);
       keyEl?.classList.add('pressed');
       if (event.repeat) return;
 
+      const shown = event.key === ' ' ? 'Space' : event.key;
       count += 1;
-      const shown = key === ' ' ? 'Space' : key;
-      recent.unshift(shown);
-      recent = recent.slice(0, 12);
+      recent = [shown, ...recent].slice(0, 12);
       $('#keyboard-count').textContent = String(count);
       $('#keyboard-last').textContent = shown;
       $('#keyboard-code').textContent = event.code || '—';
@@ -154,7 +150,7 @@
     }
 
     function onKeyUp(event) {
-      matchingKey(event.key)?.classList.remove('pressed');
+      matchingKey(event)?.classList.remove('pressed');
     }
 
     build();
@@ -163,7 +159,9 @@
     document.addEventListener('keyup', onKeyUp);
     $('#keyboard-clear')?.addEventListener('click', reset);
     $('#keyboard-reset')?.addEventListener('click', reset);
-    document.addEventListener('gamingtools:viewchange', clearPressed);
+    document.addEventListener('gamingtools:viewchange', () => {
+      layout.querySelectorAll('.keycap.pressed').forEach((el) => el.classList.remove('pressed'));
+    });
     render();
   }
 

@@ -1,0 +1,107 @@
+/* Consistent centered test/results layout and refined interface polish. */
+:root {
+  --ui-accent: #a58cff;
+  --ui-surface: rgba(25, 27, 32, .92);
+  --ui-shadow: 0 18px 48px rgba(0, 0, 0, .22);
+}
+
+.page-wrap > .view.active {
+  width: 100%;
+  margin-inline: auto;
+}
+
+/* Keep reports at the visual center instead of stretching edge-to-edge. */
+.results-panel,
+.feature-view .fp-results,
+.feature-view .fp-result-panel,
+.suite-results,
+.typing-result {
+  width: min(100%, 820px);
+  margin: 24px auto;
+  border: 1px solid rgba(165, 140, 255, .24);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(30, 31, 39, .98), rgba(22, 23, 29, .98));
+  box-shadow: var(--ui-shadow);
+}
+
+.results-header,
+.results-actions,
+.results-summary,
+.results-panel .result-main-grid {
+  justify-content: center;
+  text-align: center;
+}
+
+.results-panel .result-main-grid,
+.results-panel .result-mini-grid,
+.feature-view .fp-result-grid {
+  justify-items: center;
+}
+
+.results-panel .chart-wrap,
+.feature-view .fp-result-chart {
+  width: min(100%, 720px);
+  margin-inline: auto;
+}
+
+/* More readable interactive targets and focused states. */
+button,
+[role="button"],
+.tool-card,
+.suite-tool-card {
+  -webkit-tap-highlight-color: transparent;
+}
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 3px;
+}
+
+.nav-category-toggle {
+  min-height: 42px;
+  border-radius: 10px;
+  transition: background-color .18s ease, color .18s ease;
+}
+.nav-category-toggle:hover,
+.nav-category-toggle[aria-expanded="true"] {
+  color: #fff;
+  background: rgba(165, 140, 255, .12);
+}
+
+.card,
+.suite-tool-card {
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.tool-card:hover,
+.suite-tool-card:hover {
+  border-color: rgba(165, 140, 255, .38);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .2);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 720px) {
+  .results-panel,
+  .feature-view .fp-results,
+  .feature-view .fp-result-panel,
+  .suite-results,
+  .typing-result {
+    width: 100%;
+    margin: 18px auto;
+    border-radius: 14px;
+  }
+  .results-panel .result-mini-grid,
+  .results-panel .result-main-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
