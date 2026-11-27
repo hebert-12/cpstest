@@ -1,25 +1,17 @@
 # GamingTools
 
-A lightweight, responsive browser-based gaming performance toolkit built with HTML, CSS and vanilla JavaScript. Designed for GitHub Pages; no build step or framework required.
+A static, browser-based performance toolkit made with HTML, CSS, and vanilla JavaScript. No build step, backend, or external database is needed.
 
 ## Run locally
 
-Open `index.html` in a browser, or serve this directory with any static HTTP server. The Clipboard and Share APIs may require HTTPS or localhost. All measurements run in the browser. Personal bests, preferences and recent tests are kept in localStorage on the current device.
+Open `index.html` in a browser or host the repository using GitHub Pages. Preferences, favorites, and measured results are kept in browser `localStorage`.
 
-## Tools
+## Tools and categories
 
-- **CPS Test:** 1–60 second test, optional right-click input, live rate, per-second chart, result sharing/copying and local personal best.
-- **Reaction Time:** five randomized visual-cue rounds with false-start handling, round results and summary chart.
-- **Aim Trainer:** 30-second target session with hit/miss accuracy and activity chart.
-- **Cursor Test:** pointer path visualization and event-derived on-screen distance/speed estimates. It does not measure sensor drift.
-- **Keyboard Test:** key highlighting, event code and recent key history.
+The application organizes mouse, keyboard, typing, reaction and precision, memory, and statistics tools in a searchable, sortable sidebar. Use `Ctrl+K` / `⌘K` to open tool search. Favorites, recent and frequent usage, test history, and personal bests are device-local.
 
-## Deploy to GitHub Pages
+Polling-rate and keyboard-latency displays are browser-event estimates, not hardware diagnostics. Device load, browser event coalescing, operating-system scheduling, and display refresh affect results.
 
-In the repository settings, open **Pages**, select the `main` branch and `/ (root)` as the source, then save. The site uses relative asset paths and can also be hosted under a project subpath.
+## Compatibility
 
-## Notes
-
-- No example or fabricated performance results are used. A personal best appears only after a completed measured session.
-- Browser event timing and rendering affect measurements. These tools are for personal comparison and practice, not laboratory-grade benchmarks.
-- Google Fonts are an optional external font resource; system fallbacks are defined in the stylesheet.
+Static relative asset paths support project subpaths on GitHub Pages. Clipboard and native share options depend on browser support and may require HTTPS or localhost. No results are sent to a server.
