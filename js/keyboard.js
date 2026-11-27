@@ -1,10 +1,181 @@
-(function(){'use strict';document.addEventListener('DOMContentLoaded',()=>{
-const panel=document.querySelector('#keyboard-panel');if(!panel)return;const $=s=>document.querySelector(s),layout=$('#keyboard-layout'),historyEl=$('#keyboard-history');let count=0,recent=[];const rows=[['Esc','1','2','3','4','5','6','7','8','9','0','-','=','Backspace'],['Tab','Q','W','E','R','T','Y','U','I','O','P','[',']','\\'],['Caps','A','S','D','F','G','H','J','K','L',';','\'','Enter'],['Shift','Z','X','C','V','B','N','M',',','.','/','Shift'],['Ctrl','Win','Alt','Space','Alt','Fn','Menu','Ctrl']];
-function build(){layout.innerHTML='';rows.forEach(row=>{const line=document.createElement('div');line.className='key-row';row.forEach(label=>{const key=document.createElement('span');key.className='keycap';if(['Backspace','Tab','Caps','Enter','Shift','Ctrl','Alt','Space'].includes(label))key.classList.add('wide');if(label==='Space')key.classList.add('space');key.dataset.key=label==='Space'?' ':label.toLowerCase();key.textContent=label;line.appendChild(key)});layout.appendChild(line)})}
-function clearPressed(){document.querySelectorAll('.keycap.pressed').forEach(el=>el.classList.remove('pressed'))}
-function render(){const empty=historyEl.querySelector('.empty-state');historyEl.innerHTML='';if(!recent.length){const el=document.createElement('span');el.className='empty-state';el.textContent='No keys pressed yet.';historyEl.appendChild(el)}else recent.forEach(item=>{const el=document.createElement('span');el.className='key-token';el.textContent=item;historyEl.appendChild(el)})}
-function reset(){count=0;recent=[];clearPressed();$('#keyboard-count').textContent='0';$('#keyboard-last').textContent='—';$('#keyboard-code').textContent='—';$('#keyboard-key').textContent='—';$('#keyboard-location').textContent='—';$('#keyboard-status').textContent='The test listens while this page is active.';render()}
-function keydown(e){if(!document.querySelector('#view-keyboard').classList.contains('active'))return;if(e.target.matches('input,textarea,select,[contenteditable="true"]'))return;const label=e.key===' '?'Space':e.key.length===1?e.key.toUpperCase():e.key;const keyEl=[...document.querySelectorAll('.keycap')].find(k=>k.dataset.key===e.key.toLowerCase()||k.textContent.toLowerCase()===e.key.toLowerCase());if(keyEl)keyEl.classList.add('pressed');count++;recent.unshift(label);recent=recent.slice(0,12);$('#keyboard-count').textContent=String(count);$('#keyboard-last').textContent=label;$('#keyboard-code').textContent=e.code||'—';$('#keyboard-key').textContent=e.key===' '?'Space':e.key;$('#keyboard-location').textContent=String(e.location||0);$('#keyboard-status').textContent=`${count} key ${count===1?'press':'presses'} recorded in this session.`;render()}
-function keyup(e){const keyEl=[...document.querySelectorAll('.keycap')].find(k=>k.dataset.key===e.key.toLowerCase()||k.textContent.toLowerCase()===e.key.toLowerCase());keyEl?.classList.remove('pressed')}
-build();panel.addEventListener('click',()=>panel.focus());document.addEventListener('keydown',keydown);document.addEventListener('keyup',keyup);$('#keyboard-clear').addEventListener('click',()=>{recent=[];render()});$('#keyboard-reset').addEventListener('click',reset);document.addEventListener('gamingtools:viewchange',e=>{if(e.detail.from==='keyboard'&&e.detail.to!=='keyboard')clearPressed()});reset();
-})})();
+(function () {
+  'use strict';
+
+  const SCRIPT_URLS = [
+    'js/typing.js',
+    'js/suite.js',
+    'js/feature-pack.js',
+    'js/extra-tools.js'
+  ];
+  const STYLE_URLS = [
+    'css/suite.css',
+    'css/typing.css',
+    'css/repair.css',
+    'css/feature-pack.css',
+    'css/extra-tools.css'
+  ];
+
+  function loadStyles() {
+    STYLE_URLS.forEach((href) => {
+      if (document.querySelector(`link[ rel="stylesheet"][href="${href}"]`)) return;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = href;
+      document.head.appendChild(link);
+    });
+  }
+
+  function loadScriptsSequentially() {
+    if (window.__gamingToolsModulesLoaded) return;
+    window.__gamingToolsModulesLoaded = true;
+
+    let index = 0;
+    const next = () => {
+      if (index >= SCRIPT_URLS.length) return;
+      const script = document.createElement('script');
+      script.src = SCRIPT_URLS[index++];
+      script.onload = next;
+      script.onerror = () => {
+        console.error(`GamingTools: failed to load ${script.src}`);
+        next();
+      };
+      document.body.appendChild(script);
+    };
+    next();
+  }
+
+  function initKeyboard() {
+    const panel = document.querySelector('#keyboard-panel');
+    if (!panel || panel.dataset.keyboardReady === 'true') return;
+    panel.dataset.keyboardReady = 'true';
+
+    const $ = (selector) => document.querySelector(selector);
+    const layout = $('#keyboard-layout');
+    const historyEl = $('#keyboard-history');
+    const view = $('#view-keyboard');
+    if (!layout || !historyEl || !view) return;
+
+    const rows = [
+      ['Escape', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'Backspace'],
+      ['Tab', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\\'],
+      ['CapsLock', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', "'", 'Enter'],
+      ['Shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 'Shift'],
+      ['Control', 'Alt', ' ', 'Alt', 'Control']
+    ];
+    let count = 0;
+    let recent = [];
+    const pressed = new Set();
+
+    function keyLabel(key) {
+      if (key === ' ') return 'Space';
+      if (key === 'Control') return 'Ctrl';
+      if (key === 'CapsLock') return 'Caps';
+      return key;
+    }
+
+    function build() {
+      layout.replaceChildren();
+      rows.forEach((row) => {
+        const line = document.createElement('div');
+        line.className = 'key-row';
+        row.forEach((label) => {
+          const key = document.createElement('span');
+          key.className = 'keycap';
+          key.dataset.key = label.toLowerCase();
+          key.textContent = keyLabel(label);
+          if (label === ' ') key.classList.add('space-key');
+          if (['Backspace', 'CapsLock', 'Enter', 'Shift', 'Control', 'Tab'].includes(label)) key.classList.add('wide-key');
+          line.appendChild(key);
+        });
+        layout.appendChild(line);
+      });
+    }
+
+    function clearPressed() {
+      pressed.clear();
+      layout.querySelectorAll('.keycap.pressed').forEach((el) => el.classList.remove('pressed'));
+    }
+
+    function render() {
+      historyEl.replaceChildren();
+      if (!recent.length) {
+        const empty = document.createElement('span');
+        empty.className = 'empty-state';
+        empty.textContent = 'No keys pressed yet.';
+        historyEl.appendChild(empty);
+        return;
+      }
+      recent.forEach((item) => {
+        const chip = document.createElement('span');
+        chip.className = 'key-history-item';
+        chip.textContent = item;
+        historyEl.appendChild(chip);
+      });
+    }
+
+    function reset() {
+      count = 0;
+      recent = [];
+      clearPressed();
+      $('#keyboard-count').textContent = '0';
+      $('#keyboard-last').textContent = '—';
+      $('#keyboard-code').textContent = '—';
+      $('#keyboard-key').textContent = '—';
+      $('#keyboard-location').textContent = '—';
+      render();
+    }
+
+    function isEditable(target) {
+      return target instanceof Element && Boolean(target.closest('input, textarea, select, [contenteditable="true"]'));
+    }
+
+    function matchingKey(key) {
+      const normalized = key.toLowerCase();
+      return [...layout.querySelectorAll('.keycap')].find((el) => el.dataset.key === normalized || el.textContent.toLowerCase() === normalized);
+    }
+
+    function onKeyDown(event) {
+      if (!view.classList.contains('active') || isEditable(event.target)) return;
+      const key = event.key === ' ' ? ' ' : event.key;
+      const keyEl = matchingKey(key);
+      keyEl?.classList.add('pressed');
+      if (event.repeat) return;
+
+      count += 1;
+      const shown = key === ' ' ? 'Space' : key;
+      recent.unshift(shown);
+      recent = recent.slice(0, 12);
+      $('#keyboard-count').textContent = String(count);
+      $('#keyboard-last').textContent = shown;
+      $('#keyboard-code').textContent = event.code || '—';
+      $('#keyboard-key').textContent = shown;
+      $('#keyboard-location').textContent = String(event.location);
+      render();
+    }
+
+    function onKeyUp(event) {
+      matchingKey(event.key)?.classList.remove('pressed');
+    }
+
+    build();
+    panel.addEventListener('click', () => panel.focus());
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup', onKeyUp);
+    $('#keyboard-clear')?.addEventListener('click', reset);
+    $('#keyboard-reset')?.addEventListener('click', reset);
+    document.addEventListener('gamingtools:viewchange', clearPressed);
+    render();
+  }
+
+  function init() {
+    loadStyles();
+    initKeyboard();
+    loadScriptsSequentially();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
+})();
